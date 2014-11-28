@@ -3,6 +3,7 @@ namespace Rocketeer\Services\Tasks;
 
 use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Exceptions\TaskCompositionException;
+use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\HasLocator;
 
 class PipelineBuilder
@@ -10,18 +11,18 @@ class PipelineBuilder
 	use HasLocator;
 
 	/**
-	 * Build a pipeline of jobs
+	 * Build a pipeline of jobs meant to be
+	 * executed on multiple server/stages
 	 *
 	 * @param array $queue
 	 *
 	 * @return Pipeline
 	 */
-	public function buildPipeline(array $queue)
+	public function buildMultiserverPipeline(array $queue)
 	{
 		// First we'll build the queue
 		$pipeline = new Pipeline();
-
-		$queue = $this->decomposeDependenciesTree($queue);
+		$queue    = $this->decomposeDependenciesTree($queue);
 
 		// Get the connections to execute the tasks on
 		$connections = (array) $this->connections->getConnections();
@@ -38,6 +39,22 @@ class PipelineBuilder
 				}
 			}
 		}
+
+		return $pipeline;
+	}
+
+	/**
+	 * Build a pipeline of jobs meant to be
+	 * executed on a single server/stage
+	 *
+	 * @param array $queue
+	 *
+	 * @return Pipeline
+	 */
+	public function buildFlatPipeline(array $queue)
+	{
+		$pipeline = new Pipeline($queue);
+		$pipeline = $this->setParallelizable($pipeline, $pipeline->all());
 
 		return $pipeline;
 	}
@@ -104,7 +121,7 @@ class PipelineBuilder
 		$tree     = [];
 		$job      = [];
 
-		$flattenedQueue = array_map(function(AbstractTask $task) {
+		$flattenedQueue = array_map(function (AbstractTask $task) {
 			return $task->getName();
 		}, $queue);
 
@@ -119,7 +136,7 @@ class PipelineBuilder
 				// If the dependency isn't in the queue, add it
 				if (array_diff($dependencies, $flattenedQueue)) {
 					$builtDependencies = $this->builder->buildTasks($dependencies);
-					$job = array_merge($builtDependencies, $job);
+					$job               = array_merge($builtDependencies, $job);
 				}
 
 				$tree[]   = $job;
@@ -154,14 +171,27 @@ class PipelineBuilder
 
 		// If all the tasks in the job are parallelizable,
 		// mark the Job as such
-		$parallelizable = array_filter($jobs, function(AbstractTask $task) {
-			return $task->isParallelizable();
-		});
-
-		if (count($parallelizable) === count($jobs)) {
-			$job->setParallelizable(true);
-		}
+		$job = $this->setParallelizable($job, $job->queue);
 
 		return $job;
+	}
+
+	/**
+	 * @param ParallelizableInterface $parallelizable
+	 * @param array                   $entries
+	 *
+	 * @return ParallelizableInterface
+	 */
+	protected function setParallelizable(ParallelizableInterface $parallelizable, array $entries)
+	{
+		// Look for items that can't be parallelized
+		$cantBeParallelized = array_filter($entries, function (AbstractTask $task) {
+			return !$task->isParallelizable();
+		});
+
+		// Set the state on the Parallelizable
+		$parallelizable->setParallelizable(empty($cantBeParallelized));
+
+		return $parallelizable;
 	}
 }

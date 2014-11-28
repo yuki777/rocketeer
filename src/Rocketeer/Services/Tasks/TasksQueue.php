@@ -13,7 +13,6 @@ use Closure;
 use Exception;
 use KzykHys\Parallel\Parallel;
 use LogicException;
-use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Connection;
 use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\HasHistory;
@@ -129,13 +128,19 @@ class TasksQueue
 	/**
 	 * Build a pipeline of jobs for Parallel to execute
 	 *
-	 * @param array $queue
+	 * @param array   $queue
+	 * @param boolean $flat
 	 *
-	 * @return Pipeline|Job[]
+	 * @return Pipeline
 	 */
-	public function buildPipeline(array $queue)
+	public function buildPipeline(array $queue, $flat = false)
 	{
-		return (new PipelineBuilder($this->app))->buildPipeline($queue);
+		$pipelineBuilder = new PipelineBuilder($this->app);
+		if ($flat) {
+			return $pipelineBuilder->buildFlatPipeline($queue);
+		}
+
+		return $pipelineBuilder->buildMultiserverPipeline($queue);
 	}
 
 	/**
@@ -150,16 +155,8 @@ class TasksQueue
 		// Set proper server
 		$this->connections->setConnection($job->connection, $job->server);
 
-
 		// Create pipeline and set parallelizable state
-		$pipeline = new Pipeline($job->queue);
-		$parallelizable = array_filter($pipeline->all(), function(AbstractTask $task) {
-			return $task->isParallelizable();
-		});
-
-		if (count($parallelizable) === $pipeline->count()) {
-			$pipeline->setParallelizable(true);
-		}
+		$pipeline = $this->buildPipeline($job->queue, true);
 
 		foreach ($pipeline as $key => $task) {
 			$pipeline[$key] = function () use ($task, $job) {

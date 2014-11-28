@@ -13,11 +13,9 @@ class PipelineBuilderTests extends RocketeerTestCase
 			'Rocketeer\Dummies\Tasks\ParallelTask',
 		));
 
-		$this->assertEquals(['Rocketeer\Dummies\Tasks\RequiredParallelTask'], $pipeline[0]->queue);
-		$this->assertEquals(array(
-			'Rocketeer\Dummies\Tasks\ParallelTask',
-			'Rocketeer\Dummies\Tasks\ParallelTask',
-		), $pipeline[1]->queue);
+		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\RequiredParallelTask', $pipeline[0]->queue[0]);
+		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\ParallelTask', $pipeline[1]->queue[0]);
+		$this->assertCount(2, $pipeline[1]->queue);
 	}
 
 	public function testCanAutoResolveTaskDependencies()
@@ -27,10 +25,8 @@ class PipelineBuilderTests extends RocketeerTestCase
 			'Rocketeer\Dummies\Tasks\ParallelTask',
 		));
 
-		$this->assertEquals(['Rocketeer\Dummies\Tasks\RequiredParallelTask'], $pipeline[0]->queue);
-		$this->assertEquals(array(
-			'Rocketeer\Dummies\Tasks\ParallelTask',
-			'Rocketeer\Dummies\Tasks\ParallelTask',
-		), $pipeline[1]->queue);
+		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\RequiredParallelTask', $pipeline[0]->queue[0]);
+		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\ParallelTask', $pipeline[1]->queue[0]);
+		$this->assertCount(2, $pipeline[1]->queue);
 	}
 }

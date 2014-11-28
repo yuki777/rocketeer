@@ -22,6 +22,7 @@ class PipelineBuilder
 	{
 		// First we'll build the queue
 		$pipeline = new Pipeline();
+		$queue    = $this->builder->buildTasks($queue);
 		$queue    = $this->decomposeDependenciesTree($queue);
 
 		// Get the connections to execute the tasks on
@@ -126,8 +127,7 @@ class PipelineBuilder
 		}, $queue);
 
 		foreach ($queue as $key => $task) {
-			$instance     = $this->builder->buildTask($task);
-			$dependencies = (array) $instance->getDependencies();
+			$dependencies = (array) $task->getDependencies();
 
 			// Create a new Job if dependencies are not met
 			$unmetDependencies = array_diff($dependencies, $executed);

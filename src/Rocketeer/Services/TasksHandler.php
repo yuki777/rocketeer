@@ -192,7 +192,7 @@ class TasksHandler
 		//foreach ($listeners as $listener) {
 		//	$listener->setEvent($event);
 		//}
-		$this->events->listen('rocketeer.'.$event, function() use ($listeners) {
+		$this->events->listen('rocketeer.'.$event, function () use ($listeners) {
 			return $this->queue->run($listeners);
 		}, $priority);
 

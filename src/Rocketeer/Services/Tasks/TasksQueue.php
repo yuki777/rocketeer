@@ -14,7 +14,6 @@ use Exception;
 use KzykHys\Parallel\Parallel;
 use LogicException;
 use Rocketeer\Connection;
-use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\HasHistory;
 use Rocketeer\Traits\HasLocator;
 

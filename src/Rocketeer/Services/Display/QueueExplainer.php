@@ -93,7 +93,7 @@ class QueueExplainer
 		}
 		if ($this->command->getOutput()->getVerbosity() === 4) {
 			$now = new DateTime();
-			$comment .= ' [' .$now->format('Y-m-d H:i:s'). ']';
+			$comment .= ' ['.$now->format('Y-m-d H:i:s').']';
 		}
 
 		$this->command->line($comment);

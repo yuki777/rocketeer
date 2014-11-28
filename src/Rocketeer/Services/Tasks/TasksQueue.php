@@ -140,29 +140,7 @@ class TasksQueue
 	 */
 	public function buildPipeline(array $queue)
 	{
-		// First we'll build the queue
-		$pipeline = new Pipeline();
-
-		// Get the connections to execute the tasks on
-		$connections = (array) $this->connections->getConnections();
-		foreach ($connections as $connection) {
-			$servers = $this->connections->getConnectionCredentials($connection);
-			$stages  = $this->getStages($connection);
-
-			// Add job to pipeline
-			foreach ($servers as $server => $credentials) {
-				foreach ($stages as $stage) {
-					$pipeline[] = new Job(array(
-						'connection' => $connection,
-						'server'     => $server,
-						'stage'      => $stage,
-						'queue'      => $queue,
-					));
-				}
-			}
-		}
-
-		return $pipeline;
+		return (new PipelineBuilder($this->app))->buildPipeline($queue);
 	}
 
 	/**
@@ -255,49 +233,5 @@ class TasksQueue
 		}
 
 		return $pipeline;
-	}
-
-	////////////////////////////////////////////////////////////////////
-	//////////////////////////////// STAGES ////////////////////////////
-	////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Get the stages of a connection
-	 *
-	 * @param string $connection
-	 *
-	 * @return array
-	 */
-	public function getStages($connection)
-	{
-		$this->connections->setConnection($connection);
-
-		$stage = $this->rocketeer->getOption('stages.default');
-		if ($this->hasCommand()) {
-			$stage = $this->getOption('stage') ?: $stage;
-		}
-
-		// Return all stages if "all"
-		if ($stage == 'all' || !$stage) {
-			$stage = $this->connections->getStages();
-		}
-
-		// Sanitize and filter
-		$stages = (array) $stage;
-		$stages = array_filter($stages, [$this, 'isValidStage']);
-
-		return $stages ?: [null];
-	}
-
-	/**
-	 * Check if a stage is valid
-	 *
-	 * @param string $stage
-	 *
-	 * @return boolean
-	 */
-	public function isValidStage($stage)
-	{
-		return in_array($stage, $this->connections->getStages());
 	}
 }

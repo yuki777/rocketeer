@@ -45,6 +45,13 @@ abstract class AbstractTask extends Bash
 	protected $event;
 
 	/**
+	 * The tasks's dependencies
+	 *
+	 * @type array
+	 */
+	protected $dependencies = [];
+
+	/**
 	 * Whether the task was halted mid-course
 	 *
 	 * @var boolean
@@ -112,6 +119,14 @@ abstract class AbstractTask extends Bash
 	public function setDescription($description)
 	{
 		$this->description = $description ?: $this->description;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getDependencies()
+	{
+		return $this->dependencies;
 	}
 
 	////////////////////////////////////////////////////////////////////

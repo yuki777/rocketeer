@@ -34,6 +34,11 @@ abstract class AbstractDependenciesStrategy extends AbstractStrategy
 	protected $manager;
 
 	/**
+	 * @type boolean
+	 */
+	protected $parallelizable = true;
+
+	/**
 	 * @param Container $app
 	 */
 	public function __construct(Container $app)

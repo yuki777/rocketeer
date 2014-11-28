@@ -10,27 +10,23 @@
 namespace Rocketeer\Abstracts\Strategies;
 
 use Illuminate\Support\Arr;
+use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Bash;
+use Rocketeer\Traits\Parallelizable;
 
 /**
  * Core class for strategies
  *
  * @author Maxime Fabre <ehtnam6@gmail.com>
  */
-abstract class AbstractStrategy extends Bash
+abstract class AbstractStrategy extends AbstractTask
 {
 	/**
+	 * Default role of the strategy
+	 *
 	 * @type string
 	 */
-	protected $description;
-
-	/**
-	 * @return string
-	 */
-	public function getDescription()
-	{
-		return $this->description;
-	}
+	protected $role;
 
 	/**
 	 * Whether this particular strategy is runnable or not
@@ -40,6 +36,16 @@ abstract class AbstractStrategy extends Bash
 	public function isExecutable()
 	{
 		return true;
+	}
+
+	/**
+	 * Run the task
+	 *
+	 * @return string
+	 */
+	public function execute()
+	{
+		return $this->{$this->role}();
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -252,7 +252,7 @@ class TasksQueue
 		if (!$pipeline->count()) {
 			return $pipeline;
 		}
-		
+
 		if ($this->getOption('parallel') && $pipeline->isParallelizable()) {
 			return $this->runAsynchronously($pipeline);
 		} else {

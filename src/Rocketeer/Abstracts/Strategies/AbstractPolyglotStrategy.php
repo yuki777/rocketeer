@@ -28,18 +28,6 @@ abstract class AbstractPolyglotStrategy extends AbstractStrategy
 	protected $results;
 
 	/**
-	 * Execute a method on all sub-strategies
-	 *
-	 * @param string $method
-	 *
-	 * @return boolean[]
-	 */
-	protected function executeStrategiesMethod($method)
-	{
-		return $this->onStrategies($method);
-	}
-
-	/**
 	 * @param Closure|string $callback
 	 *
 	 * @return array

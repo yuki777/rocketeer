@@ -17,6 +17,6 @@ class ExecutablesPolyglotStrategy extends AbstractPolyglotStrategy
 
 	public function fire()
 	{
-		return $this->executeStrategiesMethod('fire');
+		return $this->onStrategies('fire');
 	}
 }

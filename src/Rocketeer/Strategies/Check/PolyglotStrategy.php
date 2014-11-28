@@ -14,7 +14,7 @@ class PolyglotStrategy extends AbstractPolyglotStrategy implements CheckStrategy
 	 */
 	public function manager()
 	{
-		$this->executeStrategiesMethod('manager');
+		$this->onStrategies('manager');
 
 		return $this->passed();
 	}
@@ -27,7 +27,7 @@ class PolyglotStrategy extends AbstractPolyglotStrategy implements CheckStrategy
 	 */
 	public function language()
 	{
-		$this->executeStrategiesMethod('language');
+		$this->onStrategies('language');
 
 		return $this->passed();
 	}
@@ -40,7 +40,7 @@ class PolyglotStrategy extends AbstractPolyglotStrategy implements CheckStrategy
 	public function extensions()
 	{
 		$missing    = [];
-		$extensions = $this->executeStrategiesMethod('extensions');
+		$extensions = $this->onStrategies('extensions');
 		foreach ($extensions as $extension) {
 			$missing = array_merge($missing, $extension);
 		}
@@ -56,7 +56,7 @@ class PolyglotStrategy extends AbstractPolyglotStrategy implements CheckStrategy
 	public function drivers()
 	{
 		$missing = [];
-		$drivers = $this->executeStrategiesMethod('drivers');
+		$drivers = $this->onStrategies('drivers');
 		foreach ($drivers as $driver) {
 			$missing = array_merge($missing, $driver);
 		}

@@ -1,6 +1,7 @@
 <?php
 namespace Rocketeer\Services\Tasks;
 
+use Rocketeer\Exceptions\TaskCompositionException;
 use Rocketeer\Traits\HasLocator;
 
 class PipelineBuilder
@@ -51,7 +52,7 @@ class PipelineBuilder
 	 * @param array $queue
 	 *
 	 * @return array
-	 * @throws \Rocketeer\Exceptions\TaskCompositionException
+	 * @throws TaskCompositionException
 	 */
 	protected function decomposeDependenciesTree(array $queue)
 	{
@@ -59,19 +60,26 @@ class PipelineBuilder
 		$tree     = [];
 		$job      = [];
 
-		foreach ($queue as $task) {
-			$instance     = $this->builder->buildTask($task);
-			$dependencies = $instance->getDependencies();
+		foreach ($queue as $key => $task) {
+			$task         = $this->builder->buildTask($task);
+			$dependencies = $task->getDependencies();
 
 			// Create a new Job if dependencies are not met
 			$unmetDependencies = array_diff($dependencies, $executed);
 			if ($dependencies && $unmetDependencies) {
-				$tree[] = $job;
-				$job    = [];
+
+				// If the dependency isn't in the queue, add it
+				if (array_diff($dependencies, $queue)) {
+					$job = array_merge($dependencies, $job);
+				}
+
+				$tree[]   = $job;
+				$job      = [];
+				$executed = array_merge($executed, $dependencies);
+
 			}
 
-			$job[]    = $task;
-			$executed = array_merge($executed, $dependencies);
+			$job[] = get_class($task);
 		}
 
 		$tree[] = $job;

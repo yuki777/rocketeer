@@ -10,6 +10,7 @@
 namespace Rocketeer\Services\Tasks;
 
 use Illuminate\Support\Collection;
+use Rocketeer\Traits\Parallelizable;
 
 /**
  * A class representing a pipeline of jobs
@@ -19,6 +20,15 @@ use Illuminate\Support\Collection;
  */
 class Pipeline extends Collection
 {
+	use Parallelizable;
+
+	/**
+	 * Whether this can be made parallel or not
+	 *
+	 * @type boolean
+	 */
+	protected $parallelizable = false;
+
 	/**
 	 * The stored results of each task
 	 *

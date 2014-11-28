@@ -12,6 +12,7 @@ namespace Rocketeer\Abstracts;
 use DateTime;
 use Illuminate\Support\Str;
 use Rocketeer\Bash;
+use Rocketeer\Traits\Parallelizable;
 use Rocketeer\Traits\StepsRunner;
 
 /**
@@ -22,6 +23,7 @@ use Rocketeer\Traits\StepsRunner;
 abstract class AbstractTask extends Bash
 {
 	use StepsRunner;
+	use Parallelizable;
 
 	/**
 	 * The name of the task
@@ -50,6 +52,13 @@ abstract class AbstractTask extends Bash
 	 * @type array
 	 */
 	protected $dependencies = [];
+
+	/**
+	 * Whether this can be made parallel or not
+	 *
+	 * @type boolean
+	 */
+	protected $parallelizable = false;
 
 	/**
 	 * Whether the task was halted mid-course

@@ -1,6 +1,7 @@
 <?php
 namespace Rocketeer\Services\Tasks;
 
+use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Exceptions\TaskCompositionException;
 use Rocketeer\Traits\HasLocator;
 
@@ -32,58 +33,13 @@ class PipelineBuilder
 			foreach ($servers as $server => $credentials) {
 				foreach ($stages as $stage) {
 					foreach ($queue as $jobs) {
-						$pipeline[] = new Job(array(
-							'connection' => $connection,
-							'server'     => $server,
-							'stage'      => $stage,
-							'queue'      => $jobs,
-						));
+						$pipeline[] = $this->createJob($connection, $server, $stage, $jobs);
 					}
 				}
 			}
 		}
 
 		return $pipeline;
-	}
-
-	/**
-	 * Decomposes the queue into parallel/sequential tasks
-	 *
-	 * @param array $queue
-	 *
-	 * @return array
-	 * @throws TaskCompositionException
-	 */
-	protected function decomposeDependenciesTree(array $queue)
-	{
-		$executed = [];
-		$tree     = [];
-		$job      = [];
-
-		foreach ($queue as $key => $task) {
-			$instance     = $this->builder->buildTask($task);
-			$dependencies = $instance->getDependencies();
-
-			// Create a new Job if dependencies are not met
-			$unmetDependencies = array_diff($dependencies, $executed);
-			if ($dependencies && $unmetDependencies) {
-
-				// If the dependency isn't in the queue, add it
-				if (array_diff($dependencies, $queue)) {
-					$job = array_merge($dependencies, $job);
-				}
-
-				$tree[]   = $job;
-				$job      = [];
-				$executed = array_merge($executed, $dependencies);
-			}
-
-			$job[] = $task;
-		}
-
-		$tree[] = $job;
-
-		return $tree;
 	}
 
 	////////////////////////////////////////////////////////////////////
@@ -128,5 +84,84 @@ class PipelineBuilder
 	public function isValidStage($stage)
 	{
 		return in_array($stage, $this->connections->getStages());
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////// JOBS ////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+
+	/**
+	 * Decomposes the queue into parallel/sequential tasks
+	 *
+	 * @param array $queue
+	 *
+	 * @return array
+	 * @throws TaskCompositionException
+	 */
+	protected function decomposeDependenciesTree(array $queue)
+	{
+		$executed = [];
+		$tree     = [];
+		$job      = [];
+
+		$flattenedQueue = array_map(function(AbstractTask $task) {
+			return $task->getName();
+		}, $queue);
+
+		foreach ($queue as $key => $task) {
+			$instance     = $this->builder->buildTask($task);
+			$dependencies = (array) $instance->getDependencies();
+
+			// Create a new Job if dependencies are not met
+			$unmetDependencies = array_diff($dependencies, $executed);
+			if ($dependencies && $unmetDependencies) {
+
+				// If the dependency isn't in the queue, add it
+				if (array_diff($dependencies, $flattenedQueue)) {
+					$builtDependencies = $this->builder->buildTasks($dependencies);
+					$job = array_merge($builtDependencies, $job);
+				}
+
+				$tree[]   = $job;
+				$job      = [];
+				$executed = array_merge($executed, $dependencies);
+			}
+
+			$job[] = $task;
+		}
+
+		$tree[] = $job;
+
+		return $tree;
+	}
+
+	/**
+	 * @param string $connection
+	 * @param string $server
+	 * @param string $stage
+	 * @param array  $jobs
+	 *
+	 * @return Job
+	 */
+	protected function createJob($connection, $server, $stage, $jobs)
+	{
+		$job = new Job(array(
+			'connection' => $connection,
+			'server'     => $server,
+			'stage'      => $stage,
+			'queue'      => $jobs,
+		));
+
+		// If all the tasks in the job are parallelizable,
+		// mark the Job as such
+		$parallelizable = array_filter($jobs, function(AbstractTask $task) {
+			return $task->isParallelizable();
+		});
+
+		if (count($parallelizable) === count($jobs)) {
+			$job->setParallelizable(true);
+		}
+
+		return $job;
 	}
 }

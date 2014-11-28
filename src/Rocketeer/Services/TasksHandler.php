@@ -189,10 +189,12 @@ class TasksHandler
 		$listeners = $this->builder->buildTasks((array) $listeners);
 
 		// Register events
-		foreach ($listeners as $listener) {
-			$listener->setEvent($event);
-			$this->events->listen('rocketeer.'.$event, [$listener, 'fire'], $priority);
-		}
+		//foreach ($listeners as $listener) {
+		//	$listener->setEvent($event);
+		//}
+		$this->events->listen('rocketeer.'.$event, function() use ($listeners) {
+			return $this->queue->run($listeners);
+		}, $priority);
 
 		return $event;
 	}

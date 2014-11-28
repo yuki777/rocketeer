@@ -13,7 +13,9 @@ use Closure;
 use Exception;
 use KzykHys\Parallel\Parallel;
 use LogicException;
+use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Connection;
+use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\HasHistory;
 use Rocketeer\Traits\HasLocator;
 
@@ -121,14 +123,7 @@ class TasksQueue
 			};
 		}
 
-		// Run the tasks and store the results
-		if ($this->getOption('parallel')) {
-			$pipeline = $this->runAsynchronously($pipeline);
-		} else {
-			$pipeline = $this->runSynchronously($pipeline);
-		}
-
-		return $pipeline;
+		return $this->runPipeline($pipeline);
 	}
 
 	/**
@@ -136,7 +131,7 @@ class TasksQueue
 	 *
 	 * @param array $queue
 	 *
-	 * @return Pipeline
+	 * @return Pipeline|Job[]
 	 */
 	public function buildPipeline(array $queue)
 	{
@@ -155,26 +150,41 @@ class TasksQueue
 		// Set proper server
 		$this->connections->setConnection($job->connection, $job->server);
 
-		foreach ($job->queue as $key => $task) {
-			if ($task->usesStages()) {
-				$stage = $task->usesStages() ? $job->stage : null;
-				$this->connections->setStage($stage);
-			}
 
-			// Here we fire the task, save its
-			// output and return its status
-			$state = $task->fire();
-			$this->toOutput($state);
+		// Create pipeline and set parallelizable state
+		$pipeline = new Pipeline($job->queue);
+		$parallelizable = array_filter($pipeline->all(), function(AbstractTask $task) {
+			return $task->isParallelizable();
+		});
 
-			// If the task didn't finish, display what the error was
-			if ($task->wasHalted() || $state === false) {
-				$this->command->error('The tasks queue was canceled by task "'.$task->getName().'"');
-
-				return false;
-			}
+		if (count($parallelizable) === $pipeline->count()) {
+			$pipeline->setParallelizable(true);
 		}
 
-		return true;
+		foreach ($pipeline as $key => $task) {
+			$pipeline[$key] = function () use ($task, $job) {
+				if ($task->usesStages()) {
+					$stage = $task->usesStages() ? $job->stage : null;
+					$this->connections->setStage($stage);
+				}
+
+				// Here we fire the task, save its
+				// output and return its status
+				$state = $task->fire();
+				$this->toOutput($state);
+
+				// If the task didn't finish, display what the error was
+				if ($task->wasHalted() || $state === false) {
+					$this->command->error('The tasks queue was canceled by task "'.$task->getName().'"');
+
+					return false;
+				}
+
+				return true;
+			};
+		}
+
+		return $this->runPipeline($pipeline);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -225,13 +235,27 @@ class TasksQueue
 		}
 
 		try {
-			$this->parallel = $this->parallel ?: new Parallel();
-			$results        = $this->parallel->values($pipeline->all());
+			$results = $this->parallel->values($pipeline->all());
 			$pipeline->setResults($results);
 		} catch (LogicException $exception) {
 			return $this->runSynchronously($pipeline);
 		}
 
 		return $pipeline;
+	}
+
+	/**
+	 * @param Pipeline $pipeline
+	 *
+	 * @return Pipeline
+	 * @throws Exception
+	 */
+	protected function runPipeline(Pipeline $pipeline)
+	{
+		if ($this->getOption('parallel') && $pipeline->isParallelizable()) {
+			return $this->runAsynchronously($pipeline);
+		} else {
+			return $this->runSynchronously($pipeline);
+		}
 	}
 }

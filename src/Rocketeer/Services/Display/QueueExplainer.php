@@ -10,6 +10,7 @@
 namespace Rocketeer\Services\Display;
 
 use Closure;
+use DateTime;
 use Rocketeer\Traits\HasLocator;
 
 /**
@@ -89,6 +90,10 @@ class QueueExplainer
 		}
 		if ($time) {
 			$comment .= ' [~'.$time.'s]';
+		}
+		if ($this->command->getOutput()->getVerbosity() === 4) {
+			$now = new DateTime();
+			$comment .= ' [' .$now->format('Y-m-d H:i:s'). ']';
 		}
 
 		$this->command->line($comment);

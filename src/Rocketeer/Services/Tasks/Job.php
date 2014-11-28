@@ -10,6 +10,7 @@
 namespace Rocketeer\Services\Tasks;
 
 use Illuminate\Support\Fluent;
+use Rocketeer\Traits\Parallelizable;
 
 /**
  * A job storing where a task/multiple tasks need to be executed
@@ -22,5 +23,14 @@ use Illuminate\Support\Fluent;
  */
 class Job extends Fluent
 {
+	use Parallelizable;
+
+	/**
+	 * Whether this can be made parallel or not
+	 *
+	 * @type boolean
+	 */
+	protected $parallelizable = false;
+
 	// ...
 }

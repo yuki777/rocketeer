@@ -248,6 +248,11 @@ class TasksQueue
 	 */
 	protected function runPipeline(Pipeline $pipeline)
 	{
+		// Cancel if empty pipeline
+		if (!$pipeline->count()) {
+			return $pipeline;
+		}
+		
 		if ($this->getOption('parallel') && $pipeline->isParallelizable()) {
 			return $this->runAsynchronously($pipeline);
 		} else {

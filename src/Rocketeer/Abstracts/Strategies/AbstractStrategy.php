@@ -29,6 +29,22 @@ abstract class AbstractStrategy extends AbstractTask
 	protected $role;
 
 	/**
+	 * @return string
+	 */
+	public function getRole()
+	{
+		return $this->role;
+	}
+
+	/**
+	 * @param string $role
+	 */
+	public function setRole($role)
+	{
+		$this->role = $role;
+	}
+
+	/**
 	 * Whether this particular strategy is runnable or not
 	 *
 	 * @return boolean

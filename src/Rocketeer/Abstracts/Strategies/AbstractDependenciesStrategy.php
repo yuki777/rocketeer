@@ -39,6 +39,11 @@ abstract class AbstractDependenciesStrategy extends AbstractStrategy
 	protected $parallelizable = true;
 
 	/**
+	 * @type string
+	 */
+	protected $role = 'install';
+
+	/**
 	 * @param Container $app
 	 */
 	public function __construct(Container $app)

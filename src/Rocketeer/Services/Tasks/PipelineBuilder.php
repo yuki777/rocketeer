@@ -54,6 +54,8 @@ class PipelineBuilder
 	 */
 	public function buildFlatPipeline(array $queue)
 	{
+		$queue = $this->builder->buildTasks($queue);
+		
 		$pipeline = new Pipeline($queue);
 		$pipeline = $this->setParallelizable($pipeline, $pipeline->all());
 

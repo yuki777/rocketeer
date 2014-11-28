@@ -29,4 +29,15 @@ class PipelineBuilderTests extends RocketeerTestCase
 		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\ParallelTask', $pipeline[1]->queue[0]);
 		$this->assertCount(2, $pipeline[1]->queue);
 	}
+
+	public function testCanBuildFlatPipeline()
+	{
+		$pipeline = $this->queue->buildPipeline(array(
+			'Rocketeer\Dummies\Tasks\ParallelTask',
+			'Rocketeer\Dummies\Tasks\ParallelTask',
+		), true);
+
+		$this->assertInstanceOf('Rocketeer\Dummies\Tasks\ParallelTask', $pipeline[0]);
+		$this->assertCount(2, $pipeline);
+	}
 }

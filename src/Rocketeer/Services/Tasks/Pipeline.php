@@ -10,6 +10,7 @@
 namespace Rocketeer\Services\Tasks;
 
 use Illuminate\Support\Collection;
+use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\Parallelizable;
 
 /**
@@ -18,7 +19,7 @@ use Rocketeer\Traits\Parallelizable;
  *
  * @author Maxime Fabre <ehtnam6@gmail.com>
  */
-class Pipeline extends Collection
+class Pipeline extends Collection implements ParallelizableInterface
 {
 	use Parallelizable;
 

@@ -10,6 +10,7 @@
 namespace Rocketeer\Services\Tasks;
 
 use Illuminate\Support\Fluent;
+use Rocketeer\Interfaces\ParallelizableInterface;
 use Rocketeer\Traits\Parallelizable;
 
 /**
@@ -21,7 +22,7 @@ use Rocketeer\Traits\Parallelizable;
  * @property \Rocketeer\Abstracts\AbstractTask[] queue
  * @author Maxime Fabre <ehtnam6@gmail.com>
  */
-class Job extends Fluent
+class Job extends Fluent implements ParallelizableInterface
 {
 	use Parallelizable;
 

@@ -61,8 +61,8 @@ class PipelineBuilder
 		$job      = [];
 
 		foreach ($queue as $key => $task) {
-			$task         = $this->builder->buildTask($task);
-			$dependencies = $task->getDependencies();
+			$instance     = $this->builder->buildTask($task);
+			$dependencies = $instance->getDependencies();
 
 			// Create a new Job if dependencies are not met
 			$unmetDependencies = array_diff($dependencies, $executed);
@@ -76,10 +76,9 @@ class PipelineBuilder
 				$tree[]   = $job;
 				$job      = [];
 				$executed = array_merge($executed, $dependencies);
-
 			}
 
-			$job[] = get_class($task);
+			$job[] = $task;
 		}
 
 		$tree[] = $job;

@@ -7,6 +7,6 @@ class ExecutableStrategy extends AbstractStrategy
 {
 	public function fire()
 	{
-		// ...
+		echo 'executable';
 	}
 }

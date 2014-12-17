@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Traits\BashModules;
 
-use Closure;
 use Illuminate\Support\Str;
 use Rocketeer\Traits\HasHistory;
 use Rocketeer\Traits\HasLocator;
@@ -43,21 +42,21 @@ trait Core
 	/**
 	 * Get which Connection to call commands with
 	 *
-	 * @return \Illuminate\Remote\ConnectionInterface
+	 * @return \Rocketeer\Interfaces\ConnectionInterface
 	 */
 	public function getConnection()
 	{
-		return $this->local ? $this->app['remote.local'] : $this->remote;
+		return ($this->local || $this->rocketeer->isLocal()) ? $this->app['remote.local'] : $this->remote;
 	}
 
 	/**
 	 * Run a series of commands in local
 	 *
-	 * @param Closure $callback
+	 * @param callable $callback
 	 *
 	 * @return boolean
 	 */
-	public function onLocal(Closure $callback)
+	public function onLocal(callable $callback)
 	{
 		$this->local = true;
 		$results     = $callback($this);
@@ -96,7 +95,7 @@ trait Core
 			$this->displayCommands($commands);
 
 			if ($pretend) {
-				return count($commands) == 1 ? $commands[0] : $commands;
+				return count($commands) === 1 ? $commands[0] : $commands;
 			}
 		}
 
@@ -201,7 +200,7 @@ trait Core
 	 */
 	public function status()
 	{
-		return $this->getOption('pretend') ? true : $this->getConnection()->status() == 0;
+		return $this->getOption('pretend') ? true : $this->getConnection()->status() === 0;
 	}
 
 	/**
@@ -270,7 +269,7 @@ trait Core
 		$flattened = implode(PHP_EOL.'$ ', $flattened);
 
 		// Print out command if verbosity level allows it
-		if ($verbosity && ($this->command->getOutput()->getVerbosity() >= $verbosity)) {
+		if ($verbosity && $this->hasCommand() && ($this->command->getOutput()->getVerbosity() >= $verbosity)) {
 			$this->command->line('<fg=magenta>$ '.$flattened.'</fg=magenta>', $verbosity);
 		}
 	}
@@ -285,7 +284,7 @@ trait Core
 	public function processCommands($commands)
 	{
 		$stage     = $this->connections->getStage();
-		$separator = $this->localStorage->getSeparator();
+		$separator = $this->environment->getSeparator();
 		$shell     = $this->rocketeer->getOption('remote.shell');
 		$shelled   = $this->rocketeer->getOption('remote.shelled');
 
@@ -362,7 +361,7 @@ trait Core
 
 		// Explode output if necessary
 		if ($array) {
-			$delimiter = $this->localStorage->getLineEndings() ?: PHP_EOL;
+			$delimiter = $this->environment->getLineEndings() ?: PHP_EOL;
 			$output    = explode($delimiter, $output);
 		}
 

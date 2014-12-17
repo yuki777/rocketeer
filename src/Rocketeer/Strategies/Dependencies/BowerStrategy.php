@@ -38,6 +38,8 @@ class BowerStrategy extends AbstractDependenciesStrategy implements Dependencies
 	 */
 	public function install()
 	{
+		$this->shareDependenciesFolder();
+
 		return $this->manager->runForCurrentRelease('install', [], $this->getInstallationOptions());
 	}
 
@@ -63,7 +65,7 @@ class BowerStrategy extends AbstractDependenciesStrategy implements Dependencies
 	protected function getInstallationOptions()
 	{
 		$credentials = $this->connections->getServerCredentials();
-		if (Arr::get($credentials, 'username') == 'root') {
+		if (Arr::get($credentials, 'username') === 'root') {
 			return ['--allow-root' => null];
 		}
 

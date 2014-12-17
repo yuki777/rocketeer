@@ -26,7 +26,14 @@ class Rocketeer
 	 *
 	 * @var string
 	 */
-	const VERSION = '2.0.3';
+	const VERSION = '2.1.0';
+
+	/**
+	 * Global local mode
+	 *
+	 * @type boolean
+	 */
+	protected $local = false;
 
 	/**
 	 * Returns what stage Rocketeer thinks he's in
@@ -42,6 +49,26 @@ class Rocketeer
 		preg_match('/'.$application.'\/([a-zA-Z0-9_-]+)\/releases\/([0-9]{14})/', $current, $matches);
 
 		return isset($matches[1]) ? $matches[1] : false;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	/////////////////////////////// LOCAL ////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+
+	/**
+	 * @return boolean
+	 */
+	public function isLocal()
+	{
+		return $this->local;
+	}
+
+	/**
+	 * @param boolean $local
+	 */
+	public function setLocal($local)
+	{
+		$this->local = $local;
 	}
 
 	//////////////////////////////////////////////////////////////////////

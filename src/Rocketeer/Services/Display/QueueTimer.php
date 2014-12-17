@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Services\Display;
 
-use Closure;
 use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Traits\HasLocator;
 
@@ -27,11 +26,11 @@ class QueueTimer
 	 * Time a task operation
 	 *
 	 * @param AbstractTask $task
-	 * @param Closure      $callback
+	 * @param callable     $callback
 	 *
 	 * @return boolean|null
 	 */
-	public function time(AbstractTask $task, Closure $callback)
+	public function time(AbstractTask $task, callable $callback)
 	{
 		// Start timer, execute callback, close timer
 		$timerStart = microtime(true);

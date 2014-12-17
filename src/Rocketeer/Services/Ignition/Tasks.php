@@ -1,4 +1,12 @@
 <?php
+/*
+ * This file is part of Rocketeer
+ *
+ * (c) Maxime Fabre <ehtnam6@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 namespace Rocketeer\Services\Ignition;
 
 use Rocketeer\Abstracts\AbstractTask;
@@ -27,9 +35,10 @@ class Tasks
 			'setup'          => 'Setup',
 			'strategies'     => 'Strategies',
 			'teardown'       => 'Teardown',
-			'tinker'         => 'Tinker',
 			'test'           => 'Test',
 			'update'         => 'Update',
+			'tinker'         => 'Development\Tinker',
+			'self-update'    => 'Development\SelfUpdate',
 			'plugin-publish' => 'Plugins\Publish',
 			'plugin-list'    => 'Plugins\List',
 			'plugin-install' => 'Plugins\Install',
@@ -82,15 +91,15 @@ class Tasks
 	/**
 	 * Get the handle matching a task
 	 *
-	 * @param string       $slug
-	 * @param AbstractTask $task
+	 * @param string            $slug
+	 * @param AbstractTask|null $task
 	 *
 	 * @return string|null
 	 */
 	public function getTaskHandle($slug, AbstractTask $task = null)
 	{
 		$slug = ($slug || !$task) ? $slug : $task->getSlug();
-		if ($slug == 'closure') {
+		if ($slug === 'closure') {
 			return;
 		}
 

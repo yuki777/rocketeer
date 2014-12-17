@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Tasks;
 
-use Closure as AnonymousFunction;
 use Rocketeer\Abstracts\AbstractTask;
 
 /**
@@ -20,16 +19,16 @@ use Rocketeer\Abstracts\AbstractTask;
 class Closure extends AbstractTask
 {
 	/**
-	 * A Closure to execute at runtime
+	 * A callable to execute at runtime
 	 *
-	 * @var AnonymousFunction
+	 * @var callable
 	 */
 	protected $closure;
 
 	/**
 	 * A string task to execute in the Closure
 	 *
-	 * @var string
+	 * @var string|string[]|callable
 	 */
 	protected $stringTask;
 
@@ -40,12 +39,13 @@ class Closure extends AbstractTask
 	/**
 	 * Change what the task does
 	 *
-	 * @param string|array|\Closure $task
+	 * @param string|array|callable $task
 	 *
 	 * @return self
 	 */
 	public function does($task)
 	{
+		// Store the original task before transformation
 		$this->setStringTask($task);
 
 		// Wrap string tasks
@@ -102,17 +102,17 @@ class Closure extends AbstractTask
 	/**
 	 * Create a task from a Closure
 	 *
-	 * @param AnonymousFunction $closure
+	 * @param callable $closure
 	 */
-	public function setClosure(AnonymousFunction $closure)
+	public function setClosure(callable $closure)
 	{
 		$this->closure = $closure;
 	}
 
 	/**
-	 * Get the task's Closure
+	 * Get the task's callable
 	 *
-	 * @return AnonymousFunction
+	 * @return callable
 	 */
 	public function getClosure()
 	{
@@ -132,7 +132,7 @@ class Closure extends AbstractTask
 	/**
 	 * Set the string task
 	 *
-	 * @param string $task
+	 * @param string|string[]|callable $task
 	 */
 	public function setStringTask($task)
 	{
@@ -141,8 +141,6 @@ class Closure extends AbstractTask
 
 	/**
 	 * Run the task
-	 *
-	 * @return  void
 	 */
 	public function execute()
 	{

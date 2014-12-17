@@ -10,7 +10,7 @@
 namespace Rocketeer\Services\Connections;
 
 use Closure;
-use Illuminate\Remote\ConnectionInterface;
+use Rocketeer\Interfaces\ConnectionInterface;
 use Rocketeer\Traits\HasLocator;
 
 /**
@@ -33,11 +33,10 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Define a set of commands as a task.
 	 *
-	 * @param  string       $task
-	 * @param  string|array $commands
+	 * @param string       $task
+	 * @param string|array $commands
 	 *
 	 * @codeCoverageIgnore
-	 * @return void
 	 */
 	public function define($task, $commands)
 	{
@@ -47,11 +46,10 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Run a task against the connection.
 	 *
-	 * @param  string       $task
-	 * @param  Closure|null $callback
+	 * @param string       $task
+	 * @param Closure|null $callback
 	 *
 	 * @codeCoverageIgnore
-	 * @return void
 	 */
 	public function task($task, Closure $callback = null)
 	{
@@ -61,10 +59,8 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Run a set of commands against the connection.
 	 *
-	 * @param  string|array $commands
-	 * @param  Closure|null $callback
-	 *
-	 * @return void
+	 * @param string|array $commands
+	 * @param Closure|null $callback
 	 */
 	public function run($commands, Closure $callback = null)
 	{
@@ -85,7 +81,7 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Get the exit status of the last command.
 	 *
-	 * @return integer|null
+	 * @return integer
 	 */
 	public function status()
 	{
@@ -95,8 +91,8 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Upload a local file to the server.
 	 *
-	 * @param  string $local
-	 * @param  string $remote
+	 * @param string $local
+	 * @param string $remote
 	 *
 	 * @codeCoverageIgnore
 	 * @return integer
@@ -111,23 +107,22 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Get the contents of a remote file.
 	 *
-	 * @param  string $remote
+	 * @param string $remote
 	 *
 	 * @codeCoverageIgnore
-	 * @return string
+	 * @return string|null
 	 */
 	public function getString($remote)
 	{
-		return $this->files->get($remote);
+		return $this->files->exists($remote) ? $this->files->get($remote) : null;
 	}
 
 	/**
 	 * Display the given line using the default output.
 	 *
-	 * @param  string $line
+	 * @param string $line
 	 *
 	 * @codeCoverageIgnore
-	 * @return void
 	 */
 	public function display($line)
 	{
@@ -139,8 +134,8 @@ class LocalConnection implements ConnectionInterface
 	/**
 	 * Upload a string to to the given file on the server.
 	 *
-	 * @param  string $remote
-	 * @param  string $contents
+	 * @param string $remote
+	 * @param string $contents
 	 *
 	 * @codeCoverageIgnore
 	 * @return integer

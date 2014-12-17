@@ -9,7 +9,6 @@
 */
 namespace Rocketeer\Services\Ignition;
 
-use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Rocketeer\Facades;
@@ -29,8 +28,6 @@ class Configuration
 
 	/**
 	 * Bind paths to the container
-	 *
-	 * @return void
 	 */
 	public function bindPaths()
 	{
@@ -141,11 +138,11 @@ class Configuration
 	/**
 	 * Merge configuration files from userland
 	 *
-	 * @param array       $folders
+	 * @param string[]    $folders
 	 * @param callable    $computeHandle
 	 * @param string|null $exclude
 	 */
-	protected function mergeConfigurationFolders(array $folders, Closure $computeHandle, $exclude = null)
+	protected function mergeConfigurationFolders(array $folders, callable $computeHandle, $exclude = null)
 	{
 		// Cancel if not ignited yet
 		$configuration = $this->app['path.rocketeer.config'];
@@ -207,8 +204,7 @@ class Configuration
 			$path    = $this->paths->getConfigurationPath();
 			$storage = $this->paths->getStoragePath();
 		} else {
-			$path = $this->paths->getBasePath().'.rocketeer';
-
+			$path    = $this->paths->getBasePath().'.rocketeer';
 			$storage = $path;
 		}
 

@@ -27,6 +27,13 @@ abstract class AbstractDependenciesStrategy extends AbstractStrategy
 	protected $binary;
 
 	/**
+	 * @type array
+	 */
+	protected $options = array(
+		'shared_dependencies' => false,
+	);
+
+	/**
 	 * The package manager instance
 	 *
 	 * @type AbstractPackageManager
@@ -87,10 +94,12 @@ abstract class AbstractDependenciesStrategy extends AbstractStrategy
 	/**
 	 * Install the dependencies
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	public function install()
 	{
+		$this->shareDependenciesFolder();
+
 		return $this->manager->runForCurrentRelease('install');
 	}
 
@@ -102,5 +111,23 @@ abstract class AbstractDependenciesStrategy extends AbstractStrategy
 	public function update()
 	{
 		return $this->manager->runForCurrentRelease('update');
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	///////////////////////// SHARED DEPENDENCIES ////////////////////////
+	//////////////////////////////////////////////////////////////////////
+
+	/**
+	 * Share the dependencies folder if possible
+	 */
+	protected function shareDependenciesFolder()
+	{
+		$folder      = $this->manager->getDependenciesFolder();
+		$shouldShare = $this->getOption('shared_dependencies', true);
+		if (!$shouldShare || !$folder) {
+			return;
+		}
+
+		$this->bash->share($folder);
 	}
 }

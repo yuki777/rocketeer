@@ -50,7 +50,7 @@ class Pipeline extends Collection implements ParallelizableInterface
 	{
 		$succeeded = count(array_filter($this->results));
 
-		return $succeeded != $this->count();
+		return $succeeded !== $this->count();
 	}
 
 	/**

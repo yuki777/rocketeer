@@ -53,16 +53,17 @@ class Console extends Application
 	/**
 	 * Get current state of the CLI
 	 *
-	 * @return array
+	 * @return string[]
 	 */
 	protected function getCurrentState()
 	{
 		return array(
-			'application'   => $this->laravel['rocketeer.rocketeer']->getApplicationName(),
-			'configuration' => $this->laravel['path.rocketeer.config'],
-			'tasks'         => $this->laravel['path.rocketeer.tasks'],
-			'events'        => $this->laravel['path.rocketeer.events'],
-			'logs'          => $this->laravel['path.rocketeer.logs'],
+			'application_name' => $this->laravel['rocketeer.rocketeer']->getApplicationName(),
+			'application'      => $this->laravel['rocketeer.paths']->getApplicationPath(),
+			'configuration'    => $this->laravel['rocketeer.paths']->getConfigurationPath(),
+			'tasks'            => $this->laravel['path.rocketeer.tasks'],
+			'events'           => $this->laravel['path.rocketeer.events'],
+			'logs'             => $this->laravel['path.rocketeer.logs'],
 		);
 	}
 }

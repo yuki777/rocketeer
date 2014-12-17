@@ -37,10 +37,33 @@ class BinariesTest extends RocketeerTestCase
 				->shouldReceive('runRaw')->andReturn('false');
 		}, false);
 
-		$this->localStorage->set('paths.composer', 'foobar');
+		$this->localStorage->set('paths.production.composer', 'foobar');
 
 		$this->assertEquals('composer', $this->task->which('composer'));
-		$this->assertNull($this->localStorage->get('paths.composer'));
+		$this->assertNull($this->localStorage->get('paths.production.composer'));
+	}
+
+	public function testPathsAreScopedToConnection()
+	{
+		$this->mock('rocketeer.remote', 'Remote', function ($mock) {
+			return $mock
+				->shouldReceive('run')->with(['which'], Mockery::any())->andReturn(null)
+				->shouldReceive('run')->with(['which composer'], Mockery::any())->andReturn(null)
+				->shouldReceive('run')->with(['which production'], Mockery::any())->andReturnUsing(function ($a, $b) {
+					$b('production');
+				})
+				->shouldReceive('run')->with(['which staging'], Mockery::any())->andReturnUsing(function ($a, $b) {
+					$b('staging');
+				})
+				->shouldReceive('runRaw')->andReturn('false');
+		}, false);
+
+		$this->localStorage->set('paths.production.composer', 'production');
+		$this->localStorage->set('paths.staging.composer', 'staging');
+
+		$this->assertEquals('production', $this->task->which('composer'));
+		$this->connections->setConnection('staging');
+		$this->assertEquals('staging', $this->task->which('composer'));
 	}
 
 	public function testCanSetPathToPhpAndArtisan()
@@ -51,6 +74,17 @@ class BinariesTest extends RocketeerTestCase
 		));
 
 		$this->assertEquals($this->binaries['php'].' '.$this->binaries['php'].' migrate', $this->task->artisan()->migrate());
+	}
+
+	public function testAlwaysRespectsCustomPath()
+	{
+		$this->mockConfig(array(
+			'rocketeer::paths.php'      => 'foo',
+			'rocketeer::paths.composer' => 'php /some/composer.phar',
+		));
+
+		$this->assertEquals('foo', $this->bash->php()->getBinary());
+		$this->assertEquals('php /some/composer.phar', $this->bash->composer()->getBinary());
 	}
 
 	public function testFetchesBinaryIfNotSpecifiedOrNull()

@@ -60,7 +60,18 @@ class TasksHandler
 	 */
 	public function __call($method, $parameters)
 	{
-		return call_user_func_array(array($this->queue, $method), $parameters);
+		// Delegate calls to TasksQueue for facade purposes
+		if (method_exists($this->queue, $method)) {
+			return call_user_func_array(array($this->queue, $method), $parameters);
+		}
+
+		// Else we execute actions on the task
+		$task = array_shift($parameters);
+		$task = $this->builder->buildTask($task);
+		call_user_func_array([$task, $method], $parameters);
+
+		// And save it
+		$this->app->instance('rocketeer.tasks.'.$task->getSlug(), $task);
 	}
 
 	////////////////////////////////////////////////////////////////////
@@ -119,8 +130,6 @@ class TasksHandler
 	 * @param string  $task
 	 * @param Closure $listeners
 	 * @param integer $priority
-	 *
-	 * @return void
 	 */
 	public function before($task, $listeners, $priority = 0)
 	{
@@ -133,8 +142,6 @@ class TasksHandler
 	 * @param string  $task
 	 * @param Closure $listeners
 	 * @param integer $priority
-	 *
-	 * @return void
 	 */
 	public function after($task, $listeners, $priority = 0)
 	{
@@ -143,8 +150,6 @@ class TasksHandler
 
 	/**
 	 * Register with the Dispatcher the events in the configuration
-	 *
-	 * @return void
 	 */
 	public function registerConfiguredEvents()
 	{
@@ -224,7 +229,7 @@ class TasksHandler
 
 		// Prevent events on anonymous tasks
 		$slug = $this->builder->buildTask($task)->getSlug();
-		if ($slug == 'closure') {
+		if ($slug === 'closure') {
 			return;
 		}
 
@@ -285,8 +290,6 @@ class TasksHandler
 	 *
 	 * @param string $plugin
 	 * @param array  $configuration
-	 *
-	 * @return void
 	 */
 	public function plugin($plugin, array $configuration = array())
 	{

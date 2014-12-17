@@ -9,8 +9,6 @@
  */
 namespace Rocketeer\Services\Display;
 
-use Closure;
-use DateTime;
 use Rocketeer\Traits\HasLocator;
 
 /**
@@ -44,11 +42,11 @@ class QueueExplainer
 	/**
 	 * Execute a task in a level below
 	 *
-	 * @param Closure $callback
+	 * @param callable $callback
 	 *
 	 * @return mixed
 	 */
-	public function displayBelow(Closure $callback)
+	public function displayBelow(callable $callback)
 	{
 		if (!$this->hasCommand()) {
 			return $callback();

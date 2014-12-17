@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Abstracts;
 
-use Closure;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -111,6 +110,7 @@ abstract class AbstractCommand extends Command
 		$overrides = array(
 			['on', 'C', InputOption::VALUE_REQUIRED, 'The connection(s) to execute the Task in'],
 			['stage', 'S', InputOption::VALUE_REQUIRED, 'The stage to execute the Task in'],
+			['server', null, InputOption::VALUE_REQUIRED, 'The server to execute the Task in'],
 			['branch', 'B', InputOption::VALUE_REQUIRED, 'The branch to deploy'],
 		);
 
@@ -160,8 +160,10 @@ abstract class AbstractCommand extends Command
 		$this->laravel->instance('rocketeer.command', $this);
 
 		// Check for credentials
-		$this->laravel['rocketeer.credentials']->getServerCredentials();
-		$this->laravel['rocketeer.credentials']->getRepositoryCredentials();
+		if (!$this->laravel['rocketeer.rocketeer']->isLocal()) {
+			$this->laravel['rocketeer.credentials']->getServerCredentials();
+			$this->laravel['rocketeer.credentials']->getRepositoryCredentials();
+		}
 
 		if ($this->straight) {
 			// If we only have a single task, run it
@@ -228,16 +230,16 @@ abstract class AbstractCommand extends Command
 	/**
 	 * Adds additional information to a question
 	 *
-	 * @param string $question
-	 * @param string $default
-	 * @param array  $choices
+	 * @param string   $question
+	 * @param string   $default
+	 * @param string[] $choices
 	 *
 	 * @return string
 	 */
 	protected function formatQuestion($question, $default, $choices = array())
 	{
 		// If default, show it in the question
-		if (!is_null($default)) {
+		if ($default !== null) {
 			$question .= ' ('.$default.')';
 		}
 
@@ -256,11 +258,11 @@ abstract class AbstractCommand extends Command
 	/**
 	 * Time an operation and display it afterwards
 	 *
-	 * @param Closure $callback
+	 * @param callable $callback
 	 *
 	 * @return boolean
 	 */
-	public function time(Closure $callback)
+	public function time(callable $callback)
 	{
 		// Start timer, execute callback, close timer
 		$timerStart = microtime(true);

@@ -34,13 +34,11 @@ class StrategiesCommand extends AbstractCommand
 
 	/**
 	 * Run the tasks
-	 *
-	 * @return void
 	 */
 	public function fire()
 	{
 		$strategies = array(
-			'check'        => ['Php', 'Ruby', 'Node'],
+			'check'        => ['Php', 'Ruby', 'Node', 'Polyglot'],
 			'deploy'       => ['Clone', 'Copy', 'Sync'],
 			'test'         => ['Phpunit'],
 			'migrate'      => ['Artisan'],

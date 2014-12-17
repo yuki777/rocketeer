@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Abstracts;
 
-use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Support\Arr;
 use Rocketeer\Traits\HasLocator;
@@ -59,8 +58,8 @@ abstract class AbstractStorage
 	/**
 	 * Get a value on the server
 	 *
-	 * @param string|null               $key
-	 * @param array|string|Closure|null $fallback
+	 * @param string|null                $key
+	 * @param array|string|callable|null $fallback
 	 *
 	 * @return string|integer|array
 	 */

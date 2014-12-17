@@ -53,8 +53,8 @@ class Setup extends AbstractTask
 
 		// Get server informations
 		$this->explainer->line('Getting some informations about the server');
-		$this->localStorage->getSeparator();
-		$this->localStorage->getLineEndings();
+		$this->environment->getSeparator();
+		$this->environment->getLineEndings();
 
 		// Create confirmation message
 		$application = $this->rocketeer->getApplicationName();
@@ -70,8 +70,6 @@ class Setup extends AbstractTask
 
 	/**
 	 * Create the Application's folders
-	 *
-	 * @return void
 	 */
 	protected function createStages()
 	{

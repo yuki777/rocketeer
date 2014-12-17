@@ -13,6 +13,7 @@ use Illuminate\Support\Arr;
 use Rocketeer\Abstracts\AbstractTask;
 use Rocketeer\Bash;
 use Rocketeer\Traits\Parallelizable;
+use Rocketeer\Traits\Configurable;
 
 /**
  * Core class for strategies
@@ -21,6 +22,13 @@ use Rocketeer\Traits\Parallelizable;
  */
 abstract class AbstractStrategy extends AbstractTask
 {
+	use Configurable;
+
+	/**
+	 * @type array
+	 */
+	protected $options = [];
+
 	/**
 	 * Default role of the strategy
 	 *

@@ -16,28 +16,30 @@ use Illuminate\Support\Arr;
  * A trait for Service Locator-based classes wich adds
  * a few shortcuts to Rocketeer classes
  *
- * @property \Illuminate\Config\Repository                            config
- * @property \Illuminate\Events\Dispatcher                            events
- * @property \Illuminate\Filesystem\Filesystem                        files
- * @property \Illuminate\Foundation\Artisan                           artisan
- * @property \Illuminate\Log\Writer                                   log
- * @property \Rocketeer\Abstracts\AbstractCommand                     command
- * @property \Rocketeer\Bash                                          bash
- * @property \Rocketeer\Console\Console                               console
- * @property \Rocketeer\Interfaces\ScmInterface                       scm
- * @property \Rocketeer\Rocketeer                                     rocketeer
- * @property \Rocketeer\Services\Connections\ConnectionsHandler       connections
- * @property \Rocketeer\Services\Connections\RemoteHandler            remote
- * @property \Rocketeer\Services\CredentialsGatherer                  credentials
- * @property \Rocketeer\Services\Display\QueueExplainer               explainer
- * @property \Rocketeer\Services\Display\QueueTimer                   timer
- * @property \Rocketeer\Services\History\History                      history
- * @property \Rocketeer\Services\Pathfinder                           paths
- * @property \Rocketeer\Services\ReleasesManager                      releasesManager
- * @property \Rocketeer\Services\Storages\LocalStorage                localStorage
- * @property \Rocketeer\Services\Tasks\TasksBuilder                   builder
- * @property \Rocketeer\Services\Tasks\TasksQueue                     queue
- * @property \Rocketeer\Services\TasksHandler                         tasks
+ * @property \Illuminate\Config\Repository                       config
+ * @property \Illuminate\Events\Dispatcher                       events
+ * @property \Illuminate\Filesystem\Filesystem                   files
+ * @property \Illuminate\Foundation\Artisan                      artisan
+ * @property \Illuminate\Log\Writer                              log
+ * @property \Rocketeer\Abstracts\AbstractCommand                command
+ * @property \Rocketeer\Bash                                     bash
+ * @property \Rocketeer\Console\Console                          console
+ * @property \Rocketeer\Interfaces\ScmInterface                  scm
+ * @property \Rocketeer\Rocketeer                                rocketeer
+ * @property \Rocketeer\Services\Connections\ConnectionsHandler  connections
+ * @property \Rocketeer\Services\Connections\RemoteHandler       remote
+ * @property \Rocketeer\Services\Environment                     environment
+ * @property \Rocketeer\Services\CredentialsGatherer             credentials
+ * @property \Rocketeer\Services\Display\QueueExplainer          explainer
+ * @property \Rocketeer\Services\Display\QueueTimer              timer
+ * @property \Rocketeer\Services\History\History                 history
+ * @property \Rocketeer\Services\History\LogsHandler             logs
+ * @property \Rocketeer\Services\Pathfinder                      paths
+ * @property \Rocketeer\Services\ReleasesManager                 releasesManager
+ * @property \Rocketeer\Services\Storages\LocalStorage           localStorage
+ * @property \Rocketeer\Services\Tasks\TasksBuilder              builder
+ * @property \Rocketeer\Services\Tasks\TasksQueue                queue
+ * @property \Rocketeer\Services\TasksHandler                    tasks
  * @author Maxime Fabre <ehtnam6@gmail.com>
  */
 trait HasLocator
@@ -75,6 +77,7 @@ trait HasLocator
 			'connections'     => 'rocketeer.connections',
 			'console'         => 'rocketeer.console',
 			'credentials'     => 'rocketeer.credentials',
+			'environment'     => 'rocketeer.environment',
 			'explainer'       => 'rocketeer.explainer',
 			'history'         => 'rocketeer.history',
 			'localStorage'    => 'rocketeer.storage.local',
@@ -94,7 +97,7 @@ trait HasLocator
 			$key = $shortcuts[$key];
 		}
 
-		return $this->app[$key];
+		return $this->app->make($key);
 	}
 
 	/**
@@ -132,11 +135,24 @@ trait HasLocator
 	 */
 	public function getOption($option, $loose = false)
 	{
-		if (!$this->hasCommand()) {
-			return;
+		// Verbosity levels
+		if ($this->hasCommand() && $option === 'verbose') {
+			return $this->command->getOutput()->getVerbosity();
 		}
 
-		return $loose ? Arr::get($this->command->option(), $option) : $this->command->option($option);
+		// Gather options
+		$options = isset($this->options) ? $this->options : [];
+
+		// If we have a command and a matching option, get it
+		if ($this->hasCommand()) {
+			if (!$loose) {
+				return $this->command->option($option);
+			}
+
+			$options = array_merge($options, (array) $this->command->option());
+		}
+
+		return Arr::get($options, $option);
 	}
 
 	//////////////////////////////////////////////////////////////////////

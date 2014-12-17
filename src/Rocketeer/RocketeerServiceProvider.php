@@ -22,6 +22,7 @@ use Rocketeer\Services\Connections\RemoteHandler;
 use Rocketeer\Services\CredentialsGatherer;
 use Rocketeer\Services\Display\QueueExplainer;
 use Rocketeer\Services\Display\QueueTimer;
+use Rocketeer\Services\Environment;
 use Rocketeer\Services\History\History;
 use Rocketeer\Services\History\LogsHandler;
 use Rocketeer\Services\Ignition\Configuration;
@@ -47,8 +48,6 @@ class RocketeerServiceProvider extends ServiceProvider
 {
 	/**
 	 * Register the service provider.
-	 *
-	 * @return void
 	 */
 	public function register()
 	{
@@ -57,8 +56,6 @@ class RocketeerServiceProvider extends ServiceProvider
 
 	/**
 	 * Bind classes and commands
-	 *
-	 * @return void
 	 */
 	public function boot()
 	{
@@ -182,12 +179,16 @@ class RocketeerServiceProvider extends ServiceProvider
 			return new LocalStorage($app, $filename);
 		});
 
-		$this->app->bind('rocketeer.bash', function ($app) {
+		$this->app->singleton('rocketeer.bash', function ($app) {
 			return new Bash($app);
 		});
 
 		$this->app->singleton('rocketeer.queue', function ($app) {
 			return new TasksQueue($app);
+		});
+
+		$this->app->bind('rocketeer.environment', function ($app) {
+			return new Environment($app);
 		});
 
 		$this->app->bind('rocketeer.builder', function ($app) {

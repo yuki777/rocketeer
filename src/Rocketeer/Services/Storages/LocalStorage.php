@@ -9,7 +9,6 @@
  */
 namespace Rocketeer\Services\Storages;
 
-use Exception;
 use Illuminate\Container\Container;
 use Rocketeer\Abstracts\AbstractStorage;
 use Rocketeer\Interfaces\StorageInterface;
@@ -29,11 +28,18 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 	protected $hash;
 
 	/**
-	 * The folder where file resides
+	 * The folder where the file resides
 	 *
 	 * @type string
 	 */
 	protected $folder;
+
+	/**
+	 * A cache of the contents
+	 *
+	 * @type array
+	 */
+	protected $contents;
 
 	/**
 	 * Build a new LocalStorage
@@ -61,6 +67,21 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 		}
 
 		$this->set('hash', $this->getHash());
+	}
+
+	/**
+	 * Delegate methods to Environment for BC
+	 *
+	 * @todo Remove in 3.0
+	 *
+	 * @param string $name
+	 * @param array  $arguments
+	 *
+	 * @return mixed
+	 */
+	public function __call($name, $arguments)
+	{
+		return call_user_func_array([$this->environment, $name], $arguments);
 	}
 
 	////////////////////////////////////////////////////////////////////
@@ -118,60 +139,8 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 	}
 
 	////////////////////////////////////////////////////////////////////
-	/////////////////////////// REMOTE VARIABLES ///////////////////////
+	////////////////////////// REPOSITORY FILE /////////////////////////
 	////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Get the directory separators on the remove server
-	 *
-	 * @return string
-	 */
-	public function getSeparator()
-	{
-		// If manually set by the user, return it
-		$user = $this->rocketeer->getOption('remote.variables.directory_separator');
-		if ($user) {
-			return $user;
-		}
-
-		return $this->get('directory_separator', function () {
-			$separator = $this->bash->runLast('php -r "echo DIRECTORY_SEPARATOR;"');
-
-			// Throw an Exception if we receive invalid output
-			if (strlen($separator) > 1) {
-				throw new Exception(
-					'An error occured while fetching the directory separators used on the server.'.PHP_EOL.
-					'Output received was : '.$separator
-				);
-			}
-
-			// Cache separator
-			$this->set('directory_separator', $separator);
-
-			return $separator;
-		});
-	}
-
-	/**
-	 * Get the remote line endings on the remove server
-	 *
-	 * @return string
-	 */
-	public function getLineEndings()
-	{
-		// If manually set by the user, return it
-		$user = $this->rocketeer->getOption('remote.variables.line_endings');
-		if ($user) {
-			return $user;
-		}
-
-		return $this->get('line_endings', function () {
-			$endings = $this->bash->runRaw('php -r "echo PHP_EOL;"');
-			$this->set('line_endings', $endings);
-
-			return $endings ?: PHP_EOL;
-		});
-	}
 
 	/**
 	 * Change the folder in use
@@ -190,10 +159,6 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 	{
 		return $this->folder;
 	}
-
-	////////////////////////////////////////////////////////////////////
-	////////////////////////// REPOSITORY FILE /////////////////////////
-	////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Get the full path to the file
@@ -218,10 +183,12 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 		}
 
 		// Get and parse file
-		$contents = $this->files->get($this->getFilepath());
-		$contents = json_decode($contents, true);
+		if ($this->contents === null) {
+			$this->contents = $this->files->get($this->getFilepath());
+			$this->contents = json_decode($this->contents, true);
+		}
 
-		return $contents;
+		return $this->contents;
 	}
 
 	/**
@@ -231,6 +198,8 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 	 */
 	protected function saveContents($contents)
 	{
+		$this->contents = $contents;
+
 		// Yup. Don't look at me like that.
 		@$this->files->put($this->getFilepath(), json_encode($contents));
 	}
@@ -242,6 +211,8 @@ class LocalStorage extends AbstractStorage implements StorageInterface
 	 */
 	public function destroy()
 	{
+		$this->contents = [];
+
 		return $this->files->delete($this->getFilepath());
 	}
 }

@@ -50,6 +50,36 @@ trait Filesystem
 			$this->move($symlink, $folder);
 		}
 
+		// Switch to relative if required
+		if ($this->rocketeer->getOption('remote.symlink') === 'relative') {
+			$folder = str_ireplace($this->paths->getFolder(''), '', $folder);
+		}
+
+		switch ($this->environment->getOperatingSystem()) {
+			case 'Linux':
+				return $this->symlinkSwap($folder, $symlink);
+
+			default:
+				if ($this->fileExists($symlink)) {
+					$this->removeFolder($symlink);
+				}
+
+				return $this->run(array(
+					sprintf('ln -s %s %s', $folder, $symlink),
+				));
+		}
+	}
+
+	/**
+	 * Swap a symlink if possible
+	 *
+	 * @param string $folder
+	 * @param string $symlink
+	 *
+	 * @return string
+	 */
+	protected function symlinkSwap($folder, $symlink)
+	{
 		if ($this->fileExists($symlink) && !$this->isSymlink($symlink)) {
 			$this->removeFolder($symlink);
 		}
@@ -163,8 +193,6 @@ trait Filesystem
 	 *
 	 * @param string $file
 	 * @param string $contents
-	 *
-	 * @return void
 	 */
 	public function putFile($file, $contents)
 	{
@@ -240,7 +268,7 @@ trait Filesystem
 		$condition = '[ '.$condition.' ] && echo "true"';
 		$condition = $this->runRaw($condition);
 
-		return trim($condition) == 'true';
+		return trim($condition) === 'true';
 	}
 
 	/**

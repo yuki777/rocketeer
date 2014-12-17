@@ -1,4 +1,12 @@
 <?php
+/*
+ * This file is part of Rocketeer
+ *
+ * (c) Maxime Fabre <ehtnam6@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 namespace Rocketeer\Abstracts;
 
 abstract class AbstractPackageManager extends AbstractBinary
@@ -30,7 +38,7 @@ abstract class AbstractPackageManager extends AbstractBinary
 		$server = $this->paths->getFolder('current/'.$this->manifest);
 		$server = $this->bash->fileExists($server);
 
-		$local = $this->app['path.base'].DS.$this->manifest;
+		$local = $this->getManifestPath();
 		$local = $this->files->exists($local);
 
 		return $local || $server;
@@ -44,7 +52,7 @@ abstract class AbstractPackageManager extends AbstractBinary
 	 */
 	public function getManifestContents()
 	{
-		$manifest = $this->app['path.base'].DS.$this->manifest;
+		$manifest = $this->getManifestPath();
 		if ($this->files->exists($manifest)) {
 			return $this->files->get($manifest);
 		}
@@ -53,10 +61,29 @@ abstract class AbstractPackageManager extends AbstractBinary
 	}
 
 	/**
+	 * Get the name of the manifest file
+	 *
 	 * @return string
 	 */
 	public function getManifest()
 	{
 		return $this->manifest;
 	}
+
+	/**
+	 * Get the path to the manifest file
+	 *
+	 * @return string
+	 */
+	public function getManifestPath()
+	{
+		return $this->paths->getApplicationPath().$this->manifest;
+	}
+
+	/**
+	 * Get where dependencies are installed
+	 *
+	 * @return string|null
+	 */
+	abstract public function getDependenciesFolder();
 }

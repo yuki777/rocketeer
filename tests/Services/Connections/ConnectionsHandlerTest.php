@@ -42,6 +42,26 @@ class ConnectionsHandlerTest extends RocketeerTestCase
 		$this->assertEquals(array('staging', 'production'), $this->connections->getConnections());
 	}
 
+	public function testUsesCurrentServerWhenGettingServerCredentials()
+	{
+		$this->swapConfig(array(
+			'rocketeer::connections' => array(
+				'production' => array(
+					'servers' => array(
+						['host' => 'server1.com'],
+						['host' => 'server2.com'],
+					),
+				),
+			),
+		));
+
+		$this->connections->setConnection('production', 0);
+		$this->assertEquals(['host' => 'server1.com'], $this->connections->getServerCredentials());
+
+		$this->connections->setConnection('production', 1);
+		$this->assertEquals(['host' => 'server2.com'], $this->connections->getServerCredentials());
+	}
+
 	public function testCanUseSshRepository()
 	{
 		$repository = 'git@github.com:'.$this->repository;
@@ -162,7 +182,7 @@ class ConnectionsHandlerTest extends RocketeerTestCase
 
 	public function testValidatesConnectionOnMultiset()
 	{
-		$this->connections->setConnections(['foo', 'bar']);
+		$this->connections->setConnections(['production', 'bar']);
 
 		$this->assertEquals(['production'], $this->connections->getConnections());
 	}
@@ -176,6 +196,35 @@ class ConnectionsHandlerTest extends RocketeerTestCase
 		$this->connections->setConnection('staging', 1);
 		$this->assertConnectionEquals('staging');
 		$this->assertCurrentServerEquals(1);
+	}
+
+	public function testCanSpecifyServersViaOptions()
+	{
+		$this->swapConfig(array(
+			'rocketeer::connections' => array(
+				'production' => array(
+					'servers' => array(
+						['host' => 'server1.com'],
+						['host' => 'server2.com'],
+						['host' => 'server3.com'],
+					),
+				),
+			),
+		));
+
+		$this->mockCommand(array(
+			'on'     => 'production',
+			'server' => '0,1',
+		));
+
+		$this->assertArrayNotHasKey(2, $this->connections->getConnectionCredentials('production'));
+	}
+
+	public function testThrowsExceptionWhenTryingToSetInvalidConnection()
+	{
+		$this->setExpectedException('Rocketeer\Exceptions\ConnectionException', 'Invalid connection(s): foo, bar');
+
+		$this->connections->setConnections('foo,bar');
 	}
 
 	////////////////////////////////////////////////////////////////////

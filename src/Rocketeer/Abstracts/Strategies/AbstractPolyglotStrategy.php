@@ -9,8 +9,6 @@
  */
 namespace Rocketeer\Abstracts\Strategies;
 
-use Closure;
-
 abstract class AbstractPolyglotStrategy extends AbstractStrategy
 {
 	/**
@@ -21,6 +19,13 @@ abstract class AbstractPolyglotStrategy extends AbstractStrategy
 	protected $strategies = [];
 
 	/**
+	 * The type of the sub-strategies
+	 *
+	 * @type string
+	 */
+	protected $type;
+
+	/**
 	 * Results of the last operation that was run
 	 *
 	 * @type array
@@ -28,7 +33,25 @@ abstract class AbstractPolyglotStrategy extends AbstractStrategy
 	protected $results;
 
 	/**
-	 * @param Closure|string $callback
+	 * Gather the missing X from a method
+	 *
+	 * @param string $method
+	 *
+	 * @return string[]
+	 */
+	protected function gatherMissingFromMethod($method)
+	{
+		$missing  = [];
+		$gathered = $this->onStrategies($method);
+		foreach ($gathered as $value) {
+			$missing = array_merge($missing, $value);
+		}
+
+		return $missing;
+	}
+
+	/**
+	 * @param callable|string $callback
 	 *
 	 * @return array
 	 */
@@ -39,7 +62,7 @@ abstract class AbstractPolyglotStrategy extends AbstractStrategy
 			$queue         = [];
 
 			foreach ($this->strategies as $strategy) {
-				$instance = $this->getStrategy('Dependencies', $strategy);
+				$instance = $this->getStrategy($this->type, $strategy, $this->options);
 				if ($instance) {
 					$instance->setRole($callback);
 					$queue[$strategy] = $instance;
@@ -77,6 +100,6 @@ abstract class AbstractPolyglotStrategy extends AbstractStrategy
 			return $value !== false;
 		});
 
-		return count($results) == count($this->strategies);
+		return count($results) === count($this->strategies);
 	}
 }

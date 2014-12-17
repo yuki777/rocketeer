@@ -13,6 +13,7 @@ use DateTime;
 use Illuminate\Support\Str;
 use Rocketeer\Bash;
 use Rocketeer\Traits\Parallelizable;
+use Rocketeer\Traits\Configurable;
 use Rocketeer\Traits\StepsRunner;
 
 /**
@@ -24,6 +25,7 @@ abstract class AbstractTask extends Bash
 {
 	use StepsRunner;
 	use Parallelizable;
+	use Configurable;
 
 	/**
 	 * The name of the task
@@ -38,6 +40,13 @@ abstract class AbstractTask extends Bash
 	 * @var string
 	 */
 	protected $description;
+
+	/**
+	 * A set of options that guide the entity
+	 *
+	 * @type array
+	 */
+	protected $options = [];
 
 	/**
 	 * The event this task is answering to

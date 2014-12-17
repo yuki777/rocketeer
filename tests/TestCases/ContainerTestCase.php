@@ -7,16 +7,27 @@ use Illuminate\Filesystem\Filesystem;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use Rocketeer\RocketeerServiceProvider;
+use Rocketeer\TestCases\Modules\RocketeerAssertions;
+use Rocketeer\TestCases\Modules\RocketeerMockeries;
 use Rocketeer\Traits\HasLocator;
 
 abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 {
 	use HasLocator;
+	use RocketeerMockeries;
+	use RocketeerAssertions;
 
 	/**
-	 * @type arra
+	 * @type array
 	 */
 	protected $defaults;
+
+	/**
+	 * The test repository
+	 *
+	 * @var string
+	 */
+	protected $repository = 'Anahkiasen/html-object.git';
 
 	/**
 	 * Override the trait constructor
@@ -25,13 +36,6 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 	{
 		parent::__construct();
 	}
-
-	/**
-	 * The test repository
-	 *
-	 * @var string
-	 */
-	protected $repository = 'Anahkiasen/html-object.git';
 
 	/**
 	 * Set up the tests
@@ -119,8 +123,9 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 			return $message;
 		};
 
+		$verbose = array_get($options, 'verbose') ? 1 : 0;
 		$command = Mockery::mock('Command')->shouldIgnoreMissing();
-		$command->shouldReceive('getOutput')->andReturn($this->getCommandOutput());
+		$command->shouldReceive('getOutput')->andReturn($this->getCommandOutput($verbose));
 
 		// Bind the output expectations
 		$types = ['comment', 'error', 'line', 'info'];
@@ -161,27 +166,6 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 	}
 
 	/**
-	 * Mock the Config component
-	 *
-	 * @param array $expectations
-	 *
-	 * @return Mockery
-	 */
-	protected function getConfig($expectations = array())
-	{
-		$config = Mockery::mock('Illuminate\Config\Repository');
-		$config->shouldIgnoreMissing();
-
-		$defaults     = $this->getFactoryConfiguration();
-		$expectations = array_merge($defaults, $expectations);
-		foreach ($expectations as $key => $value) {
-			$config->shouldReceive('get')->with($key)->andReturn($value);
-		}
-
-		return $config;
-	}
-
-	/**
 	 * Swap the current config
 	 *
 	 * @param array $config
@@ -191,7 +175,7 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 	protected function swapConfig($config = [])
 	{
 		$this->connections->disconnect();
-		$this->app['config'] = $this->getConfig($config);
+		$this->mockConfig($config);
 		$this->tasks->registerConfiguredEvents();
 	}
 
@@ -301,8 +285,8 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 				'submodules' => true,
 			),
 			'rocketeer::strategies.dependencies'  => 'Composer',
-			'rocketeer::hooks.custom'             => ['Rocketeer\Dummies\Tasks\MyCustomTask'],
 			'rocketeer::hooks'                    => array(
+				'custom' => ['Rocketeer\Dummies\Tasks\MyCustomTask'],
 				'before' => array(
 					'deploy' => array(
 						'before',
@@ -325,13 +309,17 @@ abstract class ContainerTestCase extends PHPUnit_Framework_TestCase
 		$this->defaults = array_merge($defaults, $overrides);
 
 		return $this->defaults;
-	}/**
- * @return Mockery\Mock
- */
-	protected function getCommandOutput()
+	}
+
+	/**
+	 * @param integer $verbosity
+	 *
+	 * @return Mockery\Mock
+	 */
+	protected function getCommandOutput($verbosity = 0)
 	{
 		$output = Mockery::mock('OutputInterface')->shouldIgnoreMissing();
-		$output->shouldReceive('getVerbosity')->andReturn(1);
+		$output->shouldReceive('getVerbosity')->andReturn($verbosity);
 
 		return $output;
 	}

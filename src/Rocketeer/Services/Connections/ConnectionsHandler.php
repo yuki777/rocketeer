@@ -11,6 +11,7 @@ namespace Rocketeer\Services\Connections;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Rocketeer\Exceptions\ConnectionException;
 use Rocketeer\Traits\HasLocator;
 
 /**
@@ -82,7 +83,7 @@ class ConnectionsHandler
 		$handle = [$connection, $server, $stage];
 		if ($this->isMultiserver($connection)) {
 			$handle = array_filter($handle, function ($value) {
-				return !is_null($value);
+				return $value !== null;
 			});
 		} else {
 			$handle = array_filter($handle);
@@ -116,7 +117,7 @@ class ConnectionsHandler
 	 */
 	public function isMultiserver($connection)
 	{
-		return (bool) count($this->getConnectionCredentials($connection));
+		return count($this->getConnectionCredentials($connection)) > 1;
 	}
 
 	////////////////////////////////////////////////////////////////////
@@ -140,7 +141,7 @@ class ConnectionsHandler
 	 */
 	public function setStage($stage)
 	{
-		if ($stage == $this->stage) {
+		if ($stage === $this->stage) {
 			return;
 		}
 
@@ -185,22 +186,19 @@ class ConnectionsHandler
 	public function getAvailableConnections()
 	{
 		// Fetch stored credentials
-		$storage = (array) $this->localStorage->get('connections');
+		$storage = $this->localStorage->get('connections');
+		$storage = $this->unifyMultiserversDeclarations($storage);
 
 		// Merge with defaults from config file
-		$configuration = (array) $this->config->get('rocketeer::connections');
+		$configuration = $this->config->get('rocketeer::connections');
+		$configuration = $this->unifyMultiserversDeclarations($configuration);
 
 		// Fetch from remote file
-		$remote = (array) $this->config->get('remote.connections');
+		$remote = $this->config->get('remote.connections');
+		$remote = $this->unifyMultiserversDeclarations($remote);
 
 		// Merge configurations
 		$connections = array_replace_recursive($remote, $configuration, $storage);
-
-		// Unify multiservers
-		foreach ($connections as $key => $servers) {
-			$servers           = Arr::get($servers, 'servers', [$servers]);
-			$connections[$key] = ['servers' => array_values($servers)];
-		}
 
 		return $connections;
 	}
@@ -256,6 +254,8 @@ class ConnectionsHandler
 	 * Set the active connections
 	 *
 	 * @param string|string[] $connections
+	 *
+	 * @throws ConnectionException
 	 */
 	public function setConnections($connections)
 	{
@@ -264,11 +264,13 @@ class ConnectionsHandler
 		}
 
 		// Sanitize and set connections
-		$connections = array_filter($connections, [$this, 'isValidConnection']);
-		if ($connections) {
-			$this->connections = $connections;
-			$this->handle      = null;
+		$filtered = array_filter($connections, [$this, 'isValidConnection']);
+		if (!$filtered) {
+			throw new ConnectionException('Invalid connection(s): '.implode(', ', $connections));
 		}
+
+		$this->connections = $filtered;
+		$this->handle      = null;
 	}
 
 	/**
@@ -297,7 +299,7 @@ class ConnectionsHandler
 	 */
 	public function setConnection($connection, $server = 0)
 	{
-		if (!$this->isValidConnection($connection) || (($this->connection == $connection) && ($this->currentServer == $server))) {
+		if (!$this->isValidConnection($connection) || (($this->connection === $connection) && ($this->currentServer === $server))) {
 			return;
 		}
 
@@ -323,20 +325,28 @@ class ConnectionsHandler
 		$connection = $connection ?: $this->getConnection();
 		$available  = $this->getAvailableConnections();
 
-		return Arr::get($available, $connection.'.servers');
+		// Get and filter servers
+		$servers = Arr::get($available, $connection.'.servers');
+		if ($this->hasCommand() && $allowed = $this->command->option('server')) {
+			$allowed = explode(',', $allowed);
+			$servers = array_intersect_key((array) $servers, array_flip($allowed));
+		}
+
+		return $servers;
 	}
 
 	/**
 	 * Get thecredentials for as server
 	 *
-	 * @param string|null $connection
-	 * @param int         $server
+	 * @param string|null  $connection
+	 * @param integer|null $server
 	 *
 	 * @return mixed
 	 */
-	public function getServerCredentials($connection = null, $server = 0)
+	public function getServerCredentials($connection = null, $server = null)
 	{
 		$connection = $this->getConnectionCredentials($connection);
+		$server     = $server !== null ? $server : $this->currentServer;
 
 		return Arr::get($connection, $server);
 	}
@@ -344,22 +354,48 @@ class ConnectionsHandler
 	/**
 	 * Sync Rocketeer's credentials with Laravel's
 	 *
-	 * @param string|null   $connection
-	 * @param string[]|null $credentials
-	 * @param int           $server
+	 * @param string|null $connection
+	 * @param array       $credentials
+	 * @param int         $server
 	 */
 	public function syncConnectionCredentials($connection = null, array $credentials = array(), $server = 0)
 	{
 		// Store credentials if any
 		if ($credentials) {
-			$this->localStorage->set('connections.'.$connection.'.servers.'.$server, $credentials);
+			$filtered = $this->filterUnsavableCredentials($connection, $server, $credentials);
+			$this->localStorage->set('connections.'.$connection.'.servers.'.$server, $filtered);
+
+			$handle = $this->getHandle($connection, $server);
+			$this->config->set('rocketeer::connections.'.$handle, $credentials);
 		}
 
 		// Get connection
 		$connection  = $connection ?: $this->getConnection();
-		$credentials = $this->getConnectionCredentials($connection);
+		$credentials = $credentials ?: $this->getConnectionCredentials($connection);
 
 		$this->config->set('remote.connections.'.$connection, $credentials);
+	}
+
+	/**
+	 * Filter the credentials and remove the ones that
+	 * can't be saved to disk
+	 *
+	 * @param string  $connection
+	 * @param integer $server
+	 * @param array   $credentials
+	 *
+	 * @return string[]
+	 */
+	protected function filterUnsavableCredentials($connection, $server, $credentials)
+	{
+		$defined = $this->getServerCredentials($connection, $server);
+		foreach ($credentials as $key => $value) {
+			if (array_get($defined, $key) === true) {
+				unset($credentials[$key]);
+			}
+		}
+
+		return $credentials;
 	}
 
 	/**
@@ -435,5 +471,23 @@ class ConnectionsHandler
 		$branch   = $this->rocketeer->getOption('scm.branch') ?: $fallback;
 
 		return $branch;
+	}
+
+	/**
+	 * Unify a connection's declaration into the servers form
+	 *
+	 * @param array $connection
+	 *
+	 * @return array
+	 */
+	protected function unifyMultiserversDeclarations($connection)
+	{
+		$connection = (array) $connection;
+		foreach ($connection as $key => $servers) {
+			$servers          = Arr::get($servers, 'servers', [$servers]);
+			$connection[$key] = ['servers' => array_values($servers)];
+		}
+
+		return $connection;
 	}
 }
